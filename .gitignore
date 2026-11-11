@@ -1,0 +1,12 @@
+.venv/
+node_modules/
+dist/
+.env
+backend/.env
+*.db
+*.db-*
+__pycache__/
+.pytest_cache/
+LOCAL-DEMO.txt
+.local-processes.json
+*.log

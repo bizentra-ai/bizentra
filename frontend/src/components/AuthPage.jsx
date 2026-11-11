@@ -1,0 +1,28 @@
+import React,{useState} from 'react';
+import {Button,TextField,Alert,MenuItem} from '@mui/material';
+import {useNavigate,useSearchParams} from 'react-router-dom';
+import {save} from '../services/api';
+import {useAuth} from '../context/Auth';
+import {ArrowForward,CheckCircleOutline,HubOutlined} from '@mui/icons-material';
+export default function AuthPage(){
+ const [params]=useSearchParams(),[mode,setMode]=useState(params.has('token')?'join':'login'),[busy,setBusy]=useState(false),[error,setError]=useState(''),[info,setInfo]=useState(''),[email,setEmail]=useState('');const {signIn}=useAuth();const navigate=useNavigate();
+ const change=next=>{setMode(next);setError('');setInfo('');};
+ async function submit(e){e.preventDefault();setBusy(true);setError('');const data=Object.fromEntries(new FormData(e.currentTarget));try{
+   if(mode==='join'){data.token=params.get('token');const result=await save('/auth/accept-invitation',data);await signIn(result.access_token);navigate('/dashboard');}
+   if(mode==='login'){const result=await save('/auth/login',data);await signIn(result.access_token);navigate('/dashboard');}
+   if(mode==='register'){const result=await save('/auth/register',data);setEmail(data.email);setMode('verify');setInfo(result.development_code?'Local development code: '+result.development_code:result.message);}
+   if(mode==='verify'){const result=await save('/auth/verify-otp',{email,code:data.code});await signIn(result.access_token);navigate('/dashboard');}
+   if(mode==='verify-email'){const result=await save('/auth/resend-otp',data);setEmail(data.email);setMode('verify');setInfo(result.development_code?'Local development code: '+result.development_code:result.message);}
+   if(mode==='forgot'){const result=await save('/auth/forgot-password',data);setEmail(data.email);setMode('reset');setInfo(result.development_code?'Local recovery code: '+result.development_code:result.message);}
+   if(mode==='reset'){await save('/auth/reset-password',{...data,email});change('login');setInfo('Password updated. Sign in to continue.');}
+ }catch(e){setError(e.message);}finally{setBusy(false);}}
+ return <div className="auth-page"><section className="auth-story"><div className="brand"><b className="brand-icon">B</b> business<span>os</span></div><div className="story-main"><div className="eyebrow">YOUR BUSINESS, CONNECTED</div><h1>Less switching.<br/>More moving<br/><em>forward.</em></h1><p>Bring your people, customers, and work into one shared workspace.</p><div className="story-diagram"><HubOutlined/><span>One company.<br/><strong>One source of truth.</strong></span></div><div className="story-benefits"><span><CheckCircleOutline/> Connected departments</span><span><CheckCircleOutline/> Company-level access controls</span></div></div><small>BusinessOS · Foundation release</small></section><section className="auth-form"><div className="auth-form-inner"><span className="pill">BUSINESSOS WORKSPACE</span><h2>{({login:'Welcome back.',register:'Build your workspace.',verify:'Verify your email.',forgot:'Let’s get you back in.',reset:'Set a new password.',join:'Join your team.','verify-email':'Verify your account.'})[mode]}</h2><p>{mode==='login'?'Your business, right where you left it.':mode==='register'?'Start with your company. Connect the work as you grow.':mode==='verify'?'Enter the six-digit code sent to '+email:'Secure access to your BusinessOS account.'}</p>{error&&<Alert severity="error">{error}</Alert>}{info&&<Alert severity="info">{info}</Alert>}<form onSubmit={submit} key={mode}>
+ {mode==='register'&&<><TextField label="Business name" name="business_name" required fullWidth/><div className="form-grid"><TextField label="Industry" name="industry" fullWidth/><TextField label="Country" name="country" defaultValue="India" required fullWidth/></div><TextField select name="size" label="Company size" defaultValue="1–10" fullWidth>{['1–10','11–50','51–200','201+'].map(v=><MenuItem value={v} key={v}>{v} people</MenuItem>)}</TextField></>}
+ {['register','join'].includes(mode)&&<TextField label="Your name" name="name" required fullWidth autoComplete="name"/>}
+ {['login','register','forgot','verify-email'].includes(mode)&&<TextField label="Work email" name="email" type="email" defaultValue={email} required fullWidth autoComplete="email"/>}
+ {['verify','reset'].includes(mode)&&<TextField label="Verification code" name="code" inputProps={{maxLength:6,pattern:'[0-9]{6}',inputMode:'numeric'}} required fullWidth/>}
+ {['login','register','reset','join'].includes(mode)&&<TextField label="Password" name="password" type="password" required fullWidth inputProps={{minLength:mode==='login'?1:12,maxLength:128}} autoComplete={mode==='login'?'current-password':'new-password'} helperText={mode==='login'?'':'At least 12 characters'}/>}
+ {mode==='login'&&<Button className="forgot" onClick={()=>change('forgot')}>Forgot password?</Button>}
+ <Button type="submit" variant="contained" size="large" fullWidth disabled={busy} endIcon={<ArrowForward/>}>{busy?'Please wait…':({login:'Sign in',register:'Create workspace',verify:'Verify & continue',forgot:'Send recovery code',reset:'Update password',join:'Accept invitation','verify-email':'Resend verification code'})[mode]}</Button>
+ </form><div className="auth-switch">{mode==='login'?<>New to BusinessOS? <Button onClick={()=>change('register')}>Create a workspace</Button></>:<Button onClick={()=>change('login')}>Back to sign in</Button>}</div>{mode==='login'&&<Button size="small" onClick={()=>{setMode('verify-email');setError('');}}>Resend verification code</Button>}<div className="auth-footer">A connected foundation for the way your business works.</div></div></section></div>;
+}
