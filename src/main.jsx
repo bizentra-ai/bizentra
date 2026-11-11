@@ -1,0 +1,11 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {BrowserRouter} from 'react-router-dom';
+import {ThemeProvider,createTheme,CssBaseline} from '@mui/material';
+import {AuthProvider} from './context/Auth';
+import App from './App';
+import './styles.css';
+import './navy.css';
+import './connected.css';
+const theme=createTheme({palette:{primary:{main:'#A8D8FF',contrastText:'#030712'},secondary:{main:'#C7E7FF'},background:{default:'#030712'}},typography:{fontFamily:'"Segoe UI", Arial, sans-serif',button:{textTransform:'none',fontWeight:600}},shape:{borderRadius:10},components:{MuiButton:{defaultProps:{disableElevation:true}},MuiTextField:{defaultProps:{size:'small'}},MuiChip:{styleOverrides:{root:{fontWeight:600}}}}});
+createRoot(document.getElementById('root')).render(<ThemeProvider theme={theme}><CssBaseline/><BrowserRouter><AuthProvider><App/></AuthProvider></BrowserRouter></ThemeProvider>);
